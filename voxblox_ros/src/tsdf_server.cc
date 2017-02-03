@@ -53,46 +53,46 @@ TsdfServer::TsdfServer(const ros::NodeHandle& nh,
   }
 
   // Determine map parameters.
-  TsdfMap::Config config;
+  config_ = TsdfMap::Config();
   // Workaround for OS X on mac mini not having specializations for float
   // for some reason.
-  double voxel_size = config.tsdf_voxel_size;
-  int voxels_per_side = config.tsdf_voxels_per_side;
+  double voxel_size = config_.tsdf_voxel_size;
+  int voxels_per_side = config_.tsdf_voxels_per_side;
   nh_private_.param("tsdf_voxel_size", voxel_size, voxel_size);
   nh_private_.param("tsdf_voxels_per_side", voxels_per_side, voxels_per_side);
-  config.tsdf_voxel_size = static_cast<FloatingPoint>(voxel_size);
-  config.tsdf_voxels_per_side = voxels_per_side;
-  tsdf_map_.reset(new TsdfMap(config));
+  config_.tsdf_voxel_size = static_cast<FloatingPoint>(voxel_size);
+  config_.tsdf_voxels_per_side = voxels_per_side;
+  tsdf_map_.reset(new TsdfMap(config_));
 
   // Determine integrator parameters.
-  TsdfIntegrator::Config integrator_config;
-  integrator_config.voxel_carving_enabled = true;
+  integrator_config_ = TsdfIntegrator::Config();
+  integrator_config_.voxel_carving_enabled = true;
   // Used to be * 4 according to Marius's experience, now * 2.
   // This should be made bigger again if behind-surface weighting is improved.
-  integrator_config.default_truncation_distance = config.tsdf_voxel_size * 2;
+  integrator_config_.default_truncation_distance = config_.tsdf_voxel_size * 2;
 
-  double truncation_distance = integrator_config.default_truncation_distance;
-  double max_weight = integrator_config.max_weight;
+  double truncation_distance = integrator_config_.default_truncation_distance;
+  double max_weight = integrator_config_.max_weight;
   nh_private_.param("voxel_carving_enabled",
-                    integrator_config.voxel_carving_enabled,
-                    integrator_config.voxel_carving_enabled);
+                    integrator_config_.voxel_carving_enabled,
+                    integrator_config_.voxel_carving_enabled);
   nh_private_.param("truncation_distance", truncation_distance,
                     truncation_distance);
-  nh_private_.param("max_ray_length_m", integrator_config.max_ray_length_m,
-                    integrator_config.max_ray_length_m);
-  nh_private_.param("min_ray_length_m", integrator_config.min_ray_length_m,
-                    integrator_config.min_ray_length_m);
+  nh_private_.param("max_ray_length_m", integrator_config_.max_ray_length_m,
+                    integrator_config_.max_ray_length_m);
+  nh_private_.param("min_ray_length_m", integrator_config_.min_ray_length_m,
+                    integrator_config_.min_ray_length_m);
   nh_private_.param("max_weight", max_weight, max_weight);
-  nh_private_.param("use_const_weight", integrator_config.use_const_weight,
-                    integrator_config.use_const_weight);
-  nh_private_.param("allow_clear", integrator_config.allow_clear,
-                    integrator_config.allow_clear);
-  integrator_config.default_truncation_distance =
+  nh_private_.param("use_const_weight", integrator_config_.use_const_weight,
+                    integrator_config_.use_const_weight);
+  nh_private_.param("allow_clear", integrator_config_.allow_clear,
+                    integrator_config_.allow_clear);
+  integrator_config_.default_truncation_distance =
       static_cast<float>(truncation_distance);
-  integrator_config.max_weight = static_cast<float>(max_weight);
+  integrator_config_.max_weight = static_cast<float>(max_weight);
 
   tsdf_integrator_.reset(
-      new TsdfIntegrator(integrator_config, tsdf_map_->getTsdfLayerPtr()));
+      new TsdfIntegrator(integrator_config_, tsdf_map_->getTsdfLayerPtr()));
 
   // Mesh settings.
   nh_private_.param("mesh_filename", mesh_filename_, mesh_filename_);
@@ -110,14 +110,14 @@ TsdfServer::TsdfServer(const ros::NodeHandle& nh,
     color_mode_ = ColorMode::kGray;
   }
 
-  MeshIntegrator::Config mesh_config;
-  nh_private_.param("mesh_min_weight", mesh_config.min_weight,
-                    mesh_config.min_weight);
+  mesh_config_ = MeshIntegrator::Config();
+  nh_private_.param("mesh_min_weight", mesh_config_.min_weight,
+                    mesh_config_.min_weight);
 
   mesh_layer_.reset(new MeshLayer(tsdf_map_->block_size()));
 
   mesh_integrator_.reset(new MeshIntegrator(
-      mesh_config, tsdf_map_->getTsdfLayerPtr(), mesh_layer_.get()));
+      mesh_config_, tsdf_map_->getTsdfLayerPtr(), mesh_layer_.get()));
 
   // Advertise services.
   generate_mesh_srv_ = nh_private_.advertiseService(

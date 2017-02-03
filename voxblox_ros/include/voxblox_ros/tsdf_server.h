@@ -33,7 +33,7 @@ class TsdfServer {
   TsdfServer(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
   virtual ~TsdfServer() {}
 
-  void insertPointcloud(const sensor_msgs::PointCloud2::Ptr& pointcloud);
+  virtual void insertPointcloud(const sensor_msgs::PointCloud2::Ptr& pointcloud);
 
   void publishAllUpdatedTsdfVoxels();
   void publishTsdfSurfacePoints();
@@ -44,7 +44,7 @@ class TsdfServer {
                        voxblox_msgs::FilePath::Response& response);  // NOLINT
   bool loadMapCallback(voxblox_msgs::FilePath::Request& request,     // NOLINT
                        voxblox_msgs::FilePath::Response& response);  // NOLINT
-  bool generateMeshCallback(std_srvs::Empty::Request& request,      // NOLINT
+  virtual bool generateMeshCallback(std_srvs::Empty::Request& request,      // NOLINT
                             std_srvs::Empty::Response& response);   // NOLINT
 
   virtual void updateMeshEvent(const ros::TimerEvent& event);
@@ -94,10 +94,13 @@ class TsdfServer {
   ros::Timer update_mesh_timer_;
 
   // Maps and integrators.
+  TsdfMap::Config config_;
+  TsdfIntegrator::Config integrator_config_;
   std::shared_ptr<TsdfMap> tsdf_map_;
   std::unique_ptr<TsdfIntegrator> tsdf_integrator_;
 
   // Mesh accessories.
+  MeshIntegrator::Config mesh_config_;
   std::shared_ptr<MeshLayer> mesh_layer_;
   std::unique_ptr<MeshIntegrator> mesh_integrator_;
 
