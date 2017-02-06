@@ -34,6 +34,9 @@ class TsdfServer {
   virtual ~TsdfServer() {}
 
   virtual void insertPointcloud(const sensor_msgs::PointCloud2::Ptr& pointcloud);
+  void insertPointcloudWithTransform(
+      const sensor_msgs::PointCloud2::Ptr& pointcloud_msg,
+      const Transformation& T_M_C);
 
   void publishAllUpdatedTsdfVoxels();
   void publishTsdfSurfacePoints();

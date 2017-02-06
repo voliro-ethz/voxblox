@@ -146,76 +146,82 @@ void TsdfServer::insertPointcloud(
     return;
   }
   last_msg_time_ = pointcloud_msg->header.stamp;
-
   // Look up transform from sensor frame to world frame.
-  Transformation T_G_C;
+  Transformation T_M_C;
   if (transformer_.lookupTransform(pointcloud_msg->header.frame_id,
                                    world_frame_, pointcloud_msg->header.stamp,
-                                   &T_G_C)) {
-    // Convert the PCL pointcloud into our awesome format.
-    // TODO(helenol): improve...
-    // Horrible hack fix to fix color parsing colors in PCL.
-    for (size_t d = 0; d < pointcloud_msg->fields.size(); ++d) {
-      if (pointcloud_msg->fields[d].name == std::string("rgb")) {
-        pointcloud_msg->fields[d].datatype = sensor_msgs::PointField::FLOAT32;
-      }
+                                   &T_M_C)) {
+    // Inserting the pointcloud using this transform
+    insertPointcloudWithTransform(pointcloud_msg, T_M_C);
+  }
+}
+
+void TsdfServer::insertPointcloudWithTransform(
+    const sensor_msgs::PointCloud2::Ptr& pointcloud_msg,
+    const Transformation& T_M_C) {
+  // Convert the PCL pointcloud into our awesome format.
+  // TODO(helenol): improve...
+  // Horrible hack fix to fix color parsing colors in PCL.
+  for (size_t d = 0; d < pointcloud_msg->fields.size(); ++d) {
+    if (pointcloud_msg->fields[d].name == std::string("rgb")) {
+      pointcloud_msg->fields[d].datatype = sensor_msgs::PointField::FLOAT32;
     }
+  }
 
-    pcl::PointCloud<pcl::PointXYZRGB> pointcloud_pcl;
-    // pointcloud_pcl is modified below:
-    pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
+  pcl::PointCloud<pcl::PointXYZRGB> pointcloud_pcl;
+  // pointcloud_pcl is modified below:
+  pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
 
-    timing::Timer ptcloud_timer("ptcloud_preprocess");
+  timing::Timer ptcloud_timer("ptcloud_preprocess");
 
-    // Filter out NaNs. :|
-    std::vector<int> indices;
-    pcl::removeNaNFromPointCloud(pointcloud_pcl, pointcloud_pcl, indices);
+  // Filter out NaNs. :|
+  std::vector<int> indices;
+  pcl::removeNaNFromPointCloud(pointcloud_pcl, pointcloud_pcl, indices);
 
-    Pointcloud points_C;
-    Colors colors;
-    points_C.reserve(pointcloud_pcl.size());
-    colors.reserve(pointcloud_pcl.size());
-    for (size_t i = 0; i < pointcloud_pcl.points.size(); ++i) {
-      points_C.push_back(Point(pointcloud_pcl.points[i].x,
-                               pointcloud_pcl.points[i].y,
-                               pointcloud_pcl.points[i].z));
-      colors.push_back(
-          Color(pointcloud_pcl.points[i].r, pointcloud_pcl.points[i].g,
-                pointcloud_pcl.points[i].b, pointcloud_pcl.points[i].a));
-    }
+  Pointcloud points_C;
+  Colors colors;
+  points_C.reserve(pointcloud_pcl.size());
+  colors.reserve(pointcloud_pcl.size());
+  for (size_t i = 0; i < pointcloud_pcl.points.size(); ++i) {
+    points_C.push_back(Point(pointcloud_pcl.points[i].x,
+                             pointcloud_pcl.points[i].y,
+                             pointcloud_pcl.points[i].z));
+    colors.push_back(
+        Color(pointcloud_pcl.points[i].r, pointcloud_pcl.points[i].g,
+              pointcloud_pcl.points[i].b, pointcloud_pcl.points[i].a));
+  }
 
-    ptcloud_timer.Stop();
+  ptcloud_timer.Stop();
 
-    if (verbose_) {
-      ROS_INFO("Integrating a pointcloud with %lu points.", points_C.size());
-    }
-    ros::WallTime start = ros::WallTime::now();
-    if (method_ == Method::kMerged) {
-      bool discard = false;
-      tsdf_integrator_->integratePointCloudMerged(T_G_C, points_C, colors,
-                                                  discard);
-    } else if (method_ == Method::kMergedDiscard) {
-      bool discard = true;
-      tsdf_integrator_->integratePointCloudMerged(T_G_C, points_C, colors,
-                                                  discard);
-    } else {
-      tsdf_integrator_->integratePointCloud(T_G_C, points_C, colors);
-    }
-    ros::WallTime end = ros::WallTime::now();
-    if (verbose_) {
-      ROS_INFO("Finished integrating in %f seconds, have %lu blocks.",
-               (end - start).toSec(),
-               tsdf_map_->getTsdfLayer().getNumberOfAllocatedBlocks());
-    }
+  if (verbose_) {
+    ROS_INFO("Integrating a pointcloud with %lu points.", points_C.size());
+  }
+  ros::WallTime start = ros::WallTime::now();
+  if (method_ == Method::kMerged) {
+    bool discard = false;
+    tsdf_integrator_->integratePointCloudMerged(T_M_C, points_C, colors,
+                                                discard);
+  } else if (method_ == Method::kMergedDiscard) {
+    bool discard = true;
+    tsdf_integrator_->integratePointCloudMerged(T_M_C, points_C, colors,
+                                                discard);
+  } else {
+    tsdf_integrator_->integratePointCloud(T_M_C, points_C, colors);
+  }
+  ros::WallTime end = ros::WallTime::now();
+  if (verbose_) {
+    ROS_INFO("Finished integrating in %f seconds, have %lu blocks.",
+             (end - start).toSec(),
+             tsdf_map_->getTsdfLayer().getNumberOfAllocatedBlocks());
+  }
 
-    publishAllUpdatedTsdfVoxels();
-    publishTsdfSurfacePoints();
-    publishTsdfOccupiedNodes();
-    publishSlices();
+  publishAllUpdatedTsdfVoxels();
+  publishTsdfSurfacePoints();
+  publishTsdfOccupiedNodes();
+  publishSlices();
 
-    if (verbose_) {
-      ROS_INFO_STREAM("Timings: " << std::endl << timing::Timing::Print());
-    }
+  if (verbose_) {
+    ROS_INFO_STREAM("Timings: " << std::endl << timing::Timing::Print());
   }
 }
 
