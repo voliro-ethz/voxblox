@@ -184,6 +184,9 @@ class TsdfIntegrator {
     // cleared.
     BlockHashMapType<std::vector<size_t>>::type clear_map;
     for (size_t pt_idx = 0; pt_idx < points_C.size(); ++pt_idx) {
+      // TODO(alex.millane): This tranfromation operation could be easily
+      // vertorized using standard minkindr/eigen functionality. Posibly could
+      // improve performance.
       const Point& point_C = points_C[pt_idx];
       const Point point_G = T_G_C * point_C;
 
