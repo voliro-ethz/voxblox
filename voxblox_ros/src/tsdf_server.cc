@@ -157,20 +157,23 @@ void TsdfServer::insertPointcloud(
 }
 
 void TsdfServer::insertPointcloudWithTransform(
-    const sensor_msgs::PointCloud2::Ptr& pointcloud_msg,
+    const sensor_msgs::PointCloud2::ConstPtr& pointcloud_msg,
     const Transformation& T_M_C) {
   // Convert the PCL pointcloud into our awesome format.
   // TODO(helenol): improve...
   // Horrible hack fix to fix color parsing colors in PCL.
-  for (size_t d = 0; d < pointcloud_msg->fields.size(); ++d) {
-    if (pointcloud_msg->fields[d].name == std::string("rgb")) {
-      pointcloud_msg->fields[d].datatype = sensor_msgs::PointField::FLOAT32;
+  // TODO(alexmillane): Copying the entire message such that this hack
+  // will work while accepting a const pointer.
+  sensor_msgs::PointCloud2 pointcloud_msg_fix(*pointcloud_msg);
+  for (size_t d = 0; d < pointcloud_msg_fix.fields.size(); ++d) {
+    if (pointcloud_msg_fix.fields[d].name == std::string("rgb")) {
+      pointcloud_msg_fix.fields[d].datatype = sensor_msgs::PointField::FLOAT32;
     }
   }
 
   pcl::PointCloud<pcl::PointXYZRGB> pointcloud_pcl;
   // pointcloud_pcl is modified below:
-  pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
+  pcl::fromROSMsg(pointcloud_msg_fix, pointcloud_pcl);
 
   timing::Timer ptcloud_timer("ptcloud_preprocess");
 
