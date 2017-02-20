@@ -185,7 +185,7 @@ void Interpolator<VoxelType>::getQVector(const Point& voxel_pos,
 
   Point voxel_offset = pos - voxel_pos;
 
-  CHECK((voxel_offset.array() >= 0).all());  // NOLINT
+  CHECK((voxel_offset.array() >= -1e-10).all());  // NOLINT
 
   *q_vector << 1,                                           // NOLINT
       voxel_offset[0],                                      // NOLINT
