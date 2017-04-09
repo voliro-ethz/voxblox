@@ -64,13 +64,52 @@ bool LoadLayer(const std::string& file_path,
       return false;
     }
 
-    if (!(*layer_ptr)->addBlockFromProto(
-             block_proto, Layer<VoxelType>::BlockMergingStrategy::kProhibit)) {
+    if (!(*layer_ptr)
+             ->addBlockFromProto(
+                 block_proto,
+                 Layer<VoxelType>::BlockMergingStrategy::kProhibit)) {
       LOG(ERROR) << "Could not add the block protobuf message to the layer!";
       return false;
     }
   }
 
+  return true;
+}
+
+template <typename VoxelType>
+bool LoadBlocksFromStream(
+    const size_t num_blocks, typename Layer<VoxelType>::BlockMergingStrategy strategy,
+    std::fstream* proto_file_ptr, Layer<VoxelType>* layer_ptr,
+    uint32_t* tmp_byte_offset_ptr) {
+  CHECK_NOTNULL(layer_ptr);
+  // Get header and check if it is compatible with existing layer.
+  LayerProto layer_proto;
+  if (!utils::readProtoMsgFromStream(proto_file_ptr, &layer_proto,
+                                     tmp_byte_offset_ptr)) {
+    LOG(ERROR) << "Could not read layer protobuf message.";
+    return false;
+  }
+  if (!layer_ptr->isCompatible(layer_proto)) {
+    LOG(ERROR) << "The layer information read from file is not compatible with "
+                  "the current layer!";
+    return false;
+  }
+
+  // Read all blocks and add them to the layer.
+  for (uint32_t block_idx = 0u; block_idx < num_blocks; ++block_idx) {
+    BlockProto block_proto;
+    if (!utils::readProtoMsgFromStream(proto_file_ptr, &block_proto,
+                                       tmp_byte_offset_ptr)) {
+      LOG(ERROR) << "Could not read block protobuf message number "
+                 << block_idx;
+      return false;
+    }
+
+    if (!layer_ptr->addBlockFromProto(block_proto, strategy)) {
+      LOG(ERROR) << "Could not add the block protobuf message to the layer!";
+      return false;
+    }
+  }
   return true;
 }
 
@@ -105,35 +144,14 @@ bool LoadBlocksFromFile(
     return false;
   }
 
-  // Get header and check if it is compatible with existing layer.
-  LayerProto layer_proto;
-  if (!utils::readProtoMsgFromStream(&proto_file, &layer_proto,
-                                     &tmp_byte_offset)) {
-    LOG(ERROR) << "Could not read layer protobuf message.";
-    return false;
-  }
-  if (!layer_ptr->isCompatible(layer_proto)) {
-    LOG(ERROR) << "The layer information read from file is not compatible with "
-                  "the current layer!";
-    return false;
-  }
-
-  // Read all blocks and add them to the layer.
+  // Getting the layer from the stream
   const size_t num_blocks = num_protos - 1;
-  for (uint32_t block_idx = 0u; block_idx < num_blocks; ++block_idx) {
-    BlockProto block_proto;
-    if (!utils::readProtoMsgFromStream(&proto_file, &block_proto,
-                                       &tmp_byte_offset)) {
-      LOG(ERROR) << "Could not read block protobuf message number "
-                 << block_idx;
-      return false;
-    }
-
-    if (!layer_ptr->addBlockFromProto(block_proto, strategy)) {
-      LOG(ERROR) << "Could not add the block protobuf message to the layer!";
-      return false;
-    }
+  if (!LoadBlocksFromStream(num_blocks, strategy, &proto_file, layer_ptr,
+                       &tmp_byte_offset)) {
+    return false;
   }
+
+  // Success
   return true;
 }
 
