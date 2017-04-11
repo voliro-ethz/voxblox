@@ -82,18 +82,6 @@ bool LoadBlocksFromStream(
     std::fstream* proto_file_ptr, Layer<VoxelType>* layer_ptr,
     uint32_t* tmp_byte_offset_ptr) {
   CHECK_NOTNULL(layer_ptr);
-  // Get header and check if it is compatible with existing layer.
-  LayerProto layer_proto;
-  if (!utils::readProtoMsgFromStream(proto_file_ptr, &layer_proto,
-                                     tmp_byte_offset_ptr)) {
-    LOG(ERROR) << "Could not read layer protobuf message.";
-    return false;
-  }
-  if (!layer_ptr->isCompatible(layer_proto)) {
-    LOG(ERROR) << "The layer information read from file is not compatible with "
-                  "the current layer!";
-    return false;
-  }
 
   // Read all blocks and add them to the layer.
   for (uint32_t block_idx = 0u; block_idx < num_blocks; ++block_idx) {
@@ -141,6 +129,19 @@ bool LoadBlocksFromFile(
 
   if (num_protos == 0u) {
     LOG(WARNING) << "Empty protobuf file!";
+    return false;
+  }
+
+  // Get header and check if it is compatible with existing layer.
+  LayerProto layer_proto;
+  if (!utils::readProtoMsgFromStream(&proto_file, &layer_proto,
+                                     &tmp_byte_offset)) {
+    LOG(ERROR) << "Could not read layer protobuf message.";
+    return false;
+  }
+  if (!layer_ptr->isCompatible(layer_proto)) {
+    LOG(ERROR) << "The layer information read from file is not compatible with "
+                  "the current layer!";
     return false;
   }
 
