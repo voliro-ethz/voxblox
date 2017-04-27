@@ -80,7 +80,7 @@ inline void heightColorFromVertex(const Point& vertex,
   colorVoxbloxToMsg(rainbowColorMap(mapped_height), color_msg);
 }
 
-inline void fillMarkerWithMesh(const MeshLayer::ConstPtr& mesh_layer,
+inline void fillMarkerWithMesh(const MeshLayer& mesh_layer,
                         ColorMode color_mode,
                         visualization_msgs::Marker* marker) {
   CHECK_NOTNULL(marker);
@@ -96,10 +96,10 @@ inline void fillMarkerWithMesh(const MeshLayer::ConstPtr& mesh_layer,
   marker->type = visualization_msgs::Marker::TRIANGLE_LIST;
 
   BlockIndexList mesh_indices;
-  mesh_layer->getAllAllocatedMeshes(&mesh_indices);
+  mesh_layer.getAllAllocatedMeshes(&mesh_indices);
 
   for (const BlockIndex& block_index : mesh_indices) {
-    Mesh::ConstPtr mesh = mesh_layer->getMeshPtrByIndex(block_index);
+    Mesh::ConstPtr mesh = mesh_layer.getMeshPtrByIndex(block_index);
 
     if (!mesh->hasVertices()) {
       continue;
