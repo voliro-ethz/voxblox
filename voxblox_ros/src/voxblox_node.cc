@@ -167,7 +167,7 @@ VoxbloxNode::VoxbloxNode(const ros::NodeHandle& nh,
       generate_esdf_(false),
       generate_occupancy_(false),
       world_frame_("world"),
-      sensor_frame_(""),
+      sensor_frame_("vicon/voliro/voliro"),
       use_tf_transforms_(true),
       // 10 ms here:
       timestamp_tolerance_ns_(10000000),
