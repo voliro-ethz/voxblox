@@ -29,7 +29,9 @@ TsdfServer::TsdfServer(const ros::NodeHandle& nh,
   tsdf_pointcloud_pub_ =
       nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >("tsdf_pointcloud",
                                                               1, true);
-
+  occupancy_marker_pub_ =
+      nh_private_.advertise<visualization_msgs::MarkerArray>("occupied_nodes",
+                                                              1, true);
   tsdf_slice_pub_ = nh_private_.advertise<pcl::PointCloud<pcl::PointXYZI> >(
       "tsdf_slice", 1, true);
 
@@ -106,6 +108,8 @@ TsdfServer::TsdfServer(const ros::NodeHandle& nh,
     color_mode_ = ColorMode::kNormals;
   } else if (color_mode == "lambert") {
     color_mode_ = ColorMode::kLambert;
+  } else if (color_mode == "lambert_color") {
+    color_mode_ = ColorMode::kLambertColor;
   } else {  // Default case is gray.
     color_mode_ = ColorMode::kGray;
   }
