@@ -174,10 +174,9 @@ VoxbloxNode::VoxbloxNode(const ros::NodeHandle& nh,
       generate_esdf_(false),
       generate_occupancy_(false),
       output_mesh_as_pointcloud_(false),
-      output_mesh_as_pcl_mesh_(true),
-      world_frame_("gazebo_world"),
-      // sensor_frame_("vicon/voliro/voliro"),
-      sensor_frame_("mockingbird__realsense_optical_frame"),
+      output_mesh_as_pcl_mesh_(false),
+      world_frame_("world"),
+      sensor_frame_(""),
       use_tf_transforms_(true),
       // 10 ms here:
       timestamp_tolerance_ns_(10000000),
@@ -231,10 +230,10 @@ VoxbloxNode::VoxbloxNode(const ros::NodeHandle& nh,
         "esdf_slice", 1, true);
   }
 
-  occupancy_marker_pub_ =
+  if (generate_occupancy_) {
+    occupancy_marker_pub_ =
         nh_private_.advertise<visualization_msgs::MarkerArray>("occupied_nodes",
                                                                1, true);
-  if (generate_occupancy_) {
     occupancy_layer_pub_ =
         nh_private_.advertise<visualization_msgs::MarkerArray>(
             "occupancy_layer", 1, true);
@@ -830,16 +829,7 @@ void VoxbloxNode::updateMeshEvent(const ros::TimerEvent& e) {
     pointcloud.header.frame_id = world_frame_;
     mesh_pointcloud_pub_.publish(pointcloud);
   }
-
-  if (output_mesh_as_pcl_mesh_) {
-    pcl::PolygonMesh polygon_mesh;
-    toPCLPolygonMesh(*mesh_layer_, world_frame_, &polygon_mesh);
-    pcl_msgs::PolygonMesh mesh_msg;
-    pcl_conversions::fromPCL(polygon_mesh, mesh_msg);
-    mesh_msg.header.stamp = ros::Time::now();
-    mesh_pcl_mesh_pub_.publish(mesh_msg);
-  }
-
+  
   publish_mesh_timer.Stop();
 }
 
