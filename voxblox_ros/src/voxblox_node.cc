@@ -831,6 +831,15 @@ void VoxbloxNode::updateMeshEvent(const ros::TimerEvent& e) {
     mesh_pointcloud_pub_.publish(pointcloud);
   }
 
+  if (output_mesh_as_pcl_mesh_) {
+    pcl::PolygonMesh polygon_mesh;
+    toPCLPolygonMesh(*mesh_layer_, world_frame_, &polygon_mesh);
+    pcl_msgs::PolygonMesh mesh_msg;
+    pcl_conversions::fromPCL(polygon_mesh, mesh_msg);
+    mesh_msg.header.stamp = ros::Time::now();
+    mesh_pcl_mesh_pub_.publish(mesh_msg);
+  }
+
   publish_mesh_timer.Stop();
 }
 
