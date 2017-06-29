@@ -174,16 +174,10 @@ VoxbloxNode::VoxbloxNode(const ros::NodeHandle& nh,
       generate_esdf_(false),
       generate_occupancy_(false),
       output_mesh_as_pointcloud_(false),
-<<<<<<< HEAD
       output_mesh_as_pcl_mesh_(true),
       world_frame_("gazebo_world"),
       // sensor_frame_("vicon/voliro/voliro"),
       sensor_frame_("mockingbird__realsense_optical_frame"),
-=======
-      output_mesh_as_pcl_mesh_(false),
-      world_frame_("world"),
-      sensor_frame_(""),
->>>>>>> 1ab623ad4b690e7a8991223441ed5ab5cc4cc7ba
       use_tf_transforms_(true),
       // 10 ms here:
       timestamp_tolerance_ns_(10000000),
@@ -836,7 +830,6 @@ void VoxbloxNode::updateMeshEvent(const ros::TimerEvent& e) {
     pointcloud.header.frame_id = world_frame_;
     mesh_pointcloud_pub_.publish(pointcloud);
   }
-<<<<<<< HEAD
 
   if (output_mesh_as_pcl_mesh_) {
     pcl::PolygonMesh polygon_mesh;
@@ -847,9 +840,6 @@ void VoxbloxNode::updateMeshEvent(const ros::TimerEvent& e) {
     mesh_pcl_mesh_pub_.publish(mesh_msg);
   }
 
-=======
-  
->>>>>>> 1ab623ad4b690e7a8991223441ed5ab5cc4cc7ba
   publish_mesh_timer.Stop();
 }
 
