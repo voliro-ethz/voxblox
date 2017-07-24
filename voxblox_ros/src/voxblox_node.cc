@@ -177,8 +177,6 @@ VoxbloxNode::VoxbloxNode(const ros::NodeHandle& nh,
       output_mesh_as_pcl_mesh_(true),
       world_frame_("world"),
       sensor_frame_(""),
-      // sensor_frame_("camera_depth_optical_frame"),
-      // sensor_frame_("mockingbird__realsense_optical_frame"),
       use_tf_transforms_(true),
       // 10 ms here:
       timestamp_tolerance_ns_(10000000),
